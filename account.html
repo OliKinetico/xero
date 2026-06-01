@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account – Kinetico Finance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f7; color: #333; }
+
+    header { background: #1ab4d7; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    nav a { color: white; text-decoration: none; margin-left: 24px; font-size: 14px; opacity: 0.8; }
+    nav a:hover { opacity: 1; }
+    nav a.active { opacity: 1; font-weight: 600; border-bottom: 2px solid white; padding-bottom: 2px; }
+
+    .container { max-width: 700px; margin: 32px auto; padding: 0 24px; }
+    h2 { font-size: 22px; color: #1a3040; font-weight: 700; margin-bottom: 20px; }
+
+    .banner { padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
+    .banner.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a8e6c8; }
+    .banner.error { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c6; }
+
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden; }
+    .clinic-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #f0f2f4; }
+    .clinic-row:last-child { border-bottom: none; }
+    .clinic-info .name { font-size: 15px; font-weight: 600; color: #1a3040; }
+    .clinic-info .meta { font-size: 12px; color: #aaa; margin-top: 3px; }
+    .clinic-actions { display: flex; align-items: center; gap: 12px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+    .badge.connected { background: #e6f9f0; color: #1a7a4a; }
+    .badge.disconnected { background: #f0f2f4; color: #999; }
+
+    .btn { padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; text-decoration: none; display: inline-block; }
+    .btn:hover { opacity: 0.85; }
+    .btn-connect { background: #1ab4d7; color: white; }
+    .btn-disconnect { background: white; color: #e74c3c; border: 1px solid #e74c3c; }
+    .btn-disconnect:hover { background: #fdecea; opacity: 1; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .loading-state { text-align: center; padding: 48px; color: #bbb; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kinetico Finance</h1>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/pnl.html">P&amp;L</a>
+      <a href="/account.html" class="active">Account</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>Connected Accounts</h2>
+    <div id="banner"></div>
+    <div class="card" id="clinic-list"><div class="loading-state">Loading...</div></div>
+  </div>
+
+  <script>
+    const CLINICS = [
+      'Waldegrave',
+      'Good Health Centre',
+      'Vanbrugh',
+      'Dynamic',
+      'reCentre Health',
+      'Surrey Foot'
+    ];
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('connected')) {
+      document.getElementById('banner').innerHTML =
+        `<div class="banner success">✓ ${params.get('connected')} connected successfully.</div>`;
+    } else if (params.get('error')) {
+      document.getElementById('banner').innerHTML =
+        `<div class="banner error">Connection failed: ${params.get('error')}</div>`;
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/connections');
+        const connections = await res.json();
+        const connMap = {};
+        for (const c of connections) connMap[c.clinic_name] = c;
+        render(connMap);
+      } catch (e) {
+        document.getElementById('clinic-list').innerHTML =
+          `<div class="loading-state">Error loading connections: ${e.message}</div>`;
+      }
+    }
+
+    function render(connMap) {
+      const rows = CLINICS.map(name => {
+        const conn = connMap[name];
+        const meta = conn
+          ? `Connected ${new Date(conn.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+          : 'Not connected';
+        const badge = conn
+          ? `<span class="badge connected">● Connected</span>`
+          : `<span class="badge disconnected">○ Not connected</span>`;
+        const action = conn
+          ? `<button class="btn btn-disconnect" onclick="disconnect('${conn.id}', '${name}')">Disconnect</button>`
+          : `<a class="btn btn-connect" href="/api/login?clinic=${encodeURIComponent(name)}">Connect</a>`;
+        return `
+          <div class="clinic-row" id="row-${name.replace(/\s+/g, '-')}">
+            <div class="clinic-info">
+              <div class="name">${name}</div>
+              <div class="meta">${meta}</div>
+            </div>
+            <div class="clinic-actions">
+              ${badge}
+              ${action}
+            </div>
+          </div>`;
+      }).join('');
+      document.getElementById('clinic-list').innerHTML = rows;
+    }
+
+    async function disconnect(id, name) {
+      if (!confirm(`Disconnect ${name}? You can reconnect at any time.`)) return;
+      try {
+        await fetch(`/api/connections?id=${id}`, { method: 'DELETE' });
+        load();
+      } catch (e) {
+        alert('Error disconnecting: ' + e.message);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P&amp;L – Kinetico Finance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f7; color: #333; }
+
+    header { background: #1ab4d7; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    nav a { color: white; text-decoration: none; margin-left: 24px; font-size: 14px; opacity: 0.8; }
+    nav a:hover { opacity: 1; }
+    nav a.active { opacity: 1; font-weight: 600; border-bottom: 2px solid white; padding-bottom: 2px; }
+
+    .container { max-width: 1100px; margin: 32px auto; padding: 0 24px; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .toolbar h2 { font-size: 22px; color: #1a3040; font-weight: 700; }
+    .controls { display: flex; gap: 12px; align-items: center; }
+
+    select { padding: 8px 14px; border-radius: 8px; border: 1px solid #dce3e8; font-size: 14px; color: #333; background: white; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+    .toggle { display: flex; background: white; border-radius: 8px; border: 1px solid #dce3e8; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .toggle button { padding: 8px 20px; border: none; background: none; cursor: pointer; font-size: 14px; color: #555; transition: background 0.15s; }
+    .toggle button.active { background: #1ab4d7; color: white; font-weight: 600; }
+
+    /* Summary table (all clinics) */
+    .summary-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden; }
+    .summary-card table { width: 100%; border-collapse: collapse; }
+    .summary-card th { padding: 14px 20px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; background: #f8fafb; border-bottom: 1px solid #eef1f4; }
+    .summary-card th:not(:first-child) { text-align: right; }
+    .summary-card td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid #f0f2f4; }
+    .summary-card tr:last-child td { border-bottom: none; }
+    .summary-card td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+    .summary-card td.clinic-name { font-weight: 600; color: #1a3040; }
+    .summary-card tr.total-row td { font-weight: 700; background: #f8fafb; color: #1a3040; border-top: 2px solid #eef1f4; }
+    .positive { color: #1a7a4a; }
+    .negative { color: #c0392b; }
+
+    /* Single clinic P&L */
+    .pnl-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 16px; }
+    .pnl-card table { width: 100%; border-collapse: collapse; }
+    .pnl-card th { padding: 12px 20px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; background: #f8fafb; border-bottom: 1px solid #eef1f4; }
+    .pnl-card th:last-child { text-align: right; }
+    .pnl-card td { padding: 10px 20px; font-size: 14px; border-bottom: 1px solid #f5f6f8; }
+    .pnl-card tr:last-child td { border-bottom: none; }
+    .pnl-card td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+    .section-header td { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; background: #f8fafb; padding: 10px 20px; font-weight: 600; }
+    .summary-row td { font-weight: 700; background: #f8fafb; color: #1a3040; border-top: 1px solid #eef1f4; }
+    .net-row td { font-weight: 700; font-size: 15px; background: #eef8fb; color: #1a3040; border-top: 2px solid #1ab4d7; }
+
+    .period-label { font-size: 13px; color: #aaa; margin-bottom: 20px; }
+    .loading-state { text-align: center; padding: 60px; color: #bbb; font-size: 15px; }
+    .error-row td { color: #e74c3c; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kinetico Finance</h1>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/pnl.html" class="active">P&amp;L</a>
+      <a href="/account.html">Account</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="toolbar">
+      <h2>Profit &amp; Loss</h2>
+      <div class="controls">
+        <select id="clinic-select" onchange="load()">
+          <option value="all">All Clinics</option>
+        </select>
+        <div class="toggle">
+          <button id="btn-cy" class="active" onclick="setPeriod('cy')">Calendar Year</button>
+          <button id="btn-ltm" onclick="setPeriod('ltm')">Last 12 Months</button>
+        </div>
+      </div>
+    </div>
+    <div id="content"><div class="loading-state">Loading...</div></div>
+  </div>
+
+  <script>
+    const fmt = v => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
+    const fmtVal = v => {
+      const n = parseFloat(v || 0);
+      return fmt(n);
+    };
+    let period = 'cy';
+
+    function setPeriod(p) {
+      period = p;
+      document.getElementById('btn-cy').classList.toggle('active', p === 'cy');
+      document.getElementById('btn-ltm').classList.toggle('active', p === 'ltm');
+      load();
+    }
+
+    async function init() {
+      try {
+        const res = await fetch('/api/connections');
+        const conns = await res.json();
+        const sel = document.getElementById('clinic-select');
+        for (const c of conns) {
+          const opt = document.createElement('option');
+          opt.value = c.tenant_id;
+          opt.textContent = c.clinic_name;
+          sel.appendChild(opt);
+        }
+      } catch {}
+      load();
+    }
+
+    async function load() {
+      document.getElementById('content').innerHTML = '<div class="loading-state">Loading...</div>';
+      const tenantId = document.getElementById('clinic-select').value;
+      try {
+        const res = await fetch(`/api/pnl?period=${period}&tenantId=${tenantId}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (!data.results?.length) {
+          document.getElementById('content').innerHTML =
+            `<div class="loading-state">No connected clinics. <a href="/account.html" style="color:#1ab4d7">Connect on Account page →</a></div>`;
+          return;
+        }
+        const year = new Date().getFullYear();
+        const periodLabel = period === 'ltm'
+          ? `${data.fromDate} – ${data.toDate}`
+          : `1 Jan ${year} – ${data.toDate}`;
+        document.getElementById('content').innerHTML =
+          `<div class="period-label">${periodLabel}</div>` +
+          (tenantId === 'all' ? renderSummary(data.results) : renderDetail(data.results[0]));
+      } catch (e) {
+        document.getElementById('content').innerHTML = `<div class="loading-state">Error: ${e.message}</div>`;
+      }
+    }
+
+    function renderSummary(results) {
+      let totalIncome = 0, totalNet = 0;
+      const rows = results.map(r => {
+        if (r.error) return `<tr><td class="clinic-name">${r.clinic}</td><td colspan="2" style="color:#e74c3c;text-align:right">${r.error}</td></tr>`;
+        const income = r.summary?.income ?? 0;
+        const net = r.summary?.netProfit ?? 0;
+        totalIncome += income;
+        totalNet += net;
+        const netClass = net >= 0 ? 'positive' : 'negative';
+        return `<tr>
+          <td class="clinic-name">${r.clinic}</td>
+          <td>${fmt(income)}</td>
+          <td class="${netClass}">${fmt(net)}</td>
+        </tr>`;
+      }).join('');
+      const totalNetClass = totalNet >= 0 ? 'positive' : 'negative';
+      return `<div class="summary-card">
+        <table>
+          <thead><tr><th>Clinic</th><th style="text-align:right">Income</th><th style="text-align:right">Net Profit</th></tr></thead>
+          <tbody>
+            ${rows}
+            <tr class="total-row">
+              <td>Total</td>
+              <td>${fmt(totalIncome)}</td>
+              <td class="${totalNetClass}">${fmt(totalNet)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+    }
+
+    function renderDetail(result) {
+      if (!result) return '<div class="loading-state">No data.</div>';
+      if (result.error) return `<div class="loading-state" style="color:#e74c3c">${result.error}</div>`;
+
+      const sections = (result.rows || []).filter(r => r.RowType === 'Section');
+      const html = sections.map(section => {
+        if (!section.Rows?.length) return '';
+        const dataRows = section.Rows.filter(r => r.RowType === 'Row');
+        const summaryRow = section.Rows.find(r => r.RowType === 'SummaryRow');
+        const label = summaryRow?.Cells?.[0]?.Value || '';
+        const isNet = /net (profit|loss)/i.test(label);
+
+        const bodyRows = dataRows.map(r => {
+          const name = r.Cells?.[0]?.Value || '';
+          const val = r.Cells?.[1]?.Value || '0';
+          if (!name) return '';
+          return `<tr><td style="padding-left:32px">${name}</td><td>${fmtVal(val)}</td></tr>`;
+        }).join('');
+
+        const sectionHeader = section.Title
+          ? `<tr class="section-header"><td colspan="2">${section.Title}</td></tr>`
+          : '';
+
+        const summaryHtml = summaryRow ? `
+          <tr class="${isNet ? 'net-row' : 'summary-row'}">
+            <td>${summaryRow.Cells?.[0]?.Value || ''}</td>
+            <td>${fmtVal(summaryRow.Cells?.[1]?.Value)}</td>
+          </tr>` : '';
+
+        return sectionHeader + bodyRows + summaryHtml;
+      }).join('');
+
+      return `<div class="pnl-card">
+        <table>
+          <thead><tr><th>${result.clinic}</th><th>Amount</th></tr></thead>
+          <tbody>${html}</tbody>
+        </table>
+      </div>`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
