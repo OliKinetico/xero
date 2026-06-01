@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; }
+    .header { background: #1ab4d7; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 22px; }
+    .header a { color: white; text-decoration: none; font-size: 14px; opacity: 0.9; }
+    .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card h2 { color: #333; margin-bottom: 10px; font-size: 18px; }
+    .card p { color: #666; font-size: 14px; }
+    .status { display: inline-block; background: #e6f9f0; color: #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-top: 8px; }
+  </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Financial Dashboard</h1>
+        <a href="/">Disconnect</a>
+      </div>
+      <div class="container">
+        <div class="card">
+          <h2>Connected to Xero</h2>
+          <span class="status">&#10003; Active</span>
+          <p style="margin-top:16px;">Your account is connected. More data will appear here as the dashboard is built out.</p>
+        </div>
+      </div>
+    </body>
+    </html>
