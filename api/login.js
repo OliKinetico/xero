@@ -5,13 +5,16 @@ export default function handler(req, res) {
     clinic
   })).toString('base64url');
 
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: 'A1C337E4F974482E8126CA1FCFDFEC67',
-    redirect_uri: 'https://xero-olikineticos-projects.vercel.app/api/callback',
-    scope: 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read offline_access',
-    state
-  });
+  const clientId = 'A1C337E4F974482E8126CA1FCFDFEC67';
+  const redirectUri = 'https://xero-olikineticos-projects.vercel.app/api/callback';
+  const scope = 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read offline_access';
 
-  res.redirect(`https://login.xero.com/identity/connect/authorize?${params}`);
+  const authUrl = 'https://login.xero.com/identity/connect/authorize' +
+    '?response_type=code' +
+    '&client_id=' + clientId +
+    '&redirect_uri=' + encodeURIComponent(redirectUri) +
+    '&scope=' + encodeURIComponent(scope) +
+    '&state=' + encodeURIComponent(state);
+
+  res.redirect(authUrl);
 }
