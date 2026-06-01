@@ -9,7 +9,7 @@ export default function handler(req, res) {
     response_type: 'code',
     client_id: 'A1C337E4F974482E8126CA1FCFDFEC67',
     redirect_uri: 'https://xero-olikineticos-projects.vercel.app/api/callback',
-    scope: 'openid profile email accounting.reports.read accounting.transactions.read offline_access',
+    scope: 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read offline_access',
     state
   });
 
