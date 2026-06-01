@@ -7,7 +7,7 @@ export default function handler(req, res) {
 
   const clientId = 'A1C337E4F974482E8126CA1FCFDFEC67';
   const redirectUri = 'https://xero-olikineticos-projects.vercel.app/api/callback';
-  const scope = 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read offline_access';
+  const scope = 'openid profile email accounting.reports.read offline_access';
 
   const authUrl = 'https://login.xero.com/identity/connect/authorize' +
     '?response_type=code' +
